@@ -9,20 +9,13 @@ function withId(lead: leadFirestore.LeadRecord) {
   return { ...lead, _id: lead.id };
 }
 
-// GET all leads with pagination & filtering
+// GET all leads with pagination & filtering (dynamic from Firestore only)
 router.get('/', async (req, res) => {
   try {
     const { page = 1, limit = 20, status, priority } = req.query;
 
     if (!getFirestore() || !isFirebaseConnected()) {
-      return res.json({
-        leads: [
-          { _id: '1', companyName: 'TechCorp', founderName: 'John Doe', score: 45, status: 'New', priorityLevel: 'Hot', email: 'john@techcorp.com' },
-          { _id: '2', companyName: 'BuildIt Inc', founderName: 'Jane Smith', score: 20, status: 'Contacted', priorityLevel: 'Warm', email: 'jane@buildit.com' },
-        ],
-        total: 2,
-        pages: 1,
-      });
+      return res.status(503).json({ error: 'Database not connected', leads: [], total: 0, pages: 0 });
     }
 
     const result = await leadFirestore.findLeads({

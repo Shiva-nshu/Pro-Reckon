@@ -9,10 +9,14 @@ export default function LeadsList() {
     fetch('/api/leads')
       .then(res => res.json())
       .then(data => {
-        setLeads(data.leads);
+        setLeads(data.leads ?? []);
         setLoading(false);
       })
-      .catch(err => console.error(err));
+      .catch(err => {
+        console.error(err);
+        setLeads([]);
+        setLoading(false);
+      });
   }, []);
 
   if (loading) return <div className="p-8">Loading Leads...</div>;

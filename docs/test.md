@@ -1,7 +1,8 @@
 # Test Results — ProReckon Client Acquisition
 
 **Date:** 2026-03-13  
-**Environment:** Windows, Node.js, Firebase Firestore connected
+**Environment:** Windows, Node.js, Firebase Firestore connected  
+**Last run:** Post dynamic-only changes (Hunter.io enrichment, no mock data)
 
 ---
 
@@ -58,3 +59,17 @@ Base URL: `http://localhost:3000`
 | Campaigns API | ✅ Pass |
 
 **Overall: All critical tests passed. Application is working and ready to push.**
+
+---
+
+## 6. Latest verification (dynamic-only build)
+
+| Check | Result |
+|-------|--------|
+| `npm run build` | ✅ Pass |
+| `GET /api/health` | ✅ `status: ok`, `dbStatus: connected` |
+| `GET /api/leads` | ✅ Returns `leads`, `total`, `pages` |
+| `GET /api/dashboard/stats` | ✅ Returns `totalLeads`, `qualifiedLeads`, `hotLeads`, `pipeline` |
+| `POST /api/leads/scrape` | ✅ `message: Scraping started in background` |
+
+No mock data in use; enrichment and lead discovery use Hunter.io when configured.

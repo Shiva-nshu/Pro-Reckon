@@ -14,13 +14,17 @@ export default function Dashboard() {
     try {
       const res = await fetch('/api/dashboard/stats');
       const data = await res.json();
-      setStats(data);
-      
+      if (!res.ok) {
+        setStats({ totalLeads: 0, qualifiedLeads: 0, hotLeads: 0, conversionRate: '0', pipeline: [] });
+      } else {
+        setStats(data);
+      }
       const healthRes = await fetch('/api/health');
       const healthData = await healthRes.json();
       setDbStatus(healthData.dbStatus);
     } catch (err) {
       console.error(err);
+      setStats({ totalLeads: 0, qualifiedLeads: 0, hotLeads: 0, conversionRate: '0', pipeline: [] });
     } finally {
       setLoading(false);
     }

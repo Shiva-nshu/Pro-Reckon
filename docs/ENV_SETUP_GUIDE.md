@@ -40,7 +40,15 @@ This app does not send emails; no SMTP needed.
 
 ---
 
-### 5. **APP_URL**
+### 5. **LEAD_SOURCE_DOMAINS** (for lead discovery)
+| | |
+|---|---|
+| **What it is** | Comma-separated list of domains to fetch as leads via Hunter.io (e.g. `stripe.com,github.com`). |
+| **Where** | You choose – add domains you want to discover. "Run Scraper" / daily job will fetch company data from Hunter and save new leads. |
+
+---
+
+### 6. **APP_URL**
 | | |
 |---|---|
 | **What it is** | The public URL of your app (e.g. `http://localhost:3000` or `https://yourapp.com`). |
@@ -48,7 +56,7 @@ This app does not send emails; no SMTP needed.
 
 ---
 
-### 6. **PROXY_LIST**
+### 7. **PROXY_LIST**
 | | |
 |---|---|
 | **What it is** | Comma-separated proxy URLs for the scraper (e.g. `http://proxy1:8080,http://proxy2:8080`). |
@@ -60,6 +68,7 @@ This app does not send emails; no SMTP needed.
 
 - [ ] **GEMINI_API_KEY** – [Google AI Studio](https://aistudio.google.com/apikey)
 - [ ] **Firebase** – [Firebase Console](https://console.firebase.google.com) → Firestore + Service account key → `serviceAccountKey.json` + `GOOGLE_APPLICATION_CREDENTIALS`
-- [ ] **ENRICHMENT_API_KEY** (optional) – [Hunter.io](https://hunter.io) or [Clearbit](https://clearbit.com)
+- [ ] **ENRICHMENT_API_KEY** – [Hunter.io](https://hunter.io) (for enrichment and lead discovery)
+- [ ] **LEAD_SOURCE_DOMAINS** – e.g. `stripe.com,github.com` (domains to fetch as leads)
 - [ ] **APP_URL** – e.g. `http://localhost:3000`
 - [ ] **PROXY_LIST** (optional) – only if you use proxies

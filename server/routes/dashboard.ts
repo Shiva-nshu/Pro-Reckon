@@ -7,18 +7,13 @@ const router = express.Router();
 router.get('/stats', async (req, res) => {
   try {
     if (!isFirebaseConnected()) {
-      return res.json({
-        totalLeads: 1250,
-        qualifiedLeads: 450,
-        hotLeads: 120,
-        conversionRate: 3.2,
-        pipeline: [
-          { name: 'New', value: 400 },
-          { name: 'Contacted', value: 300 },
-          { name: 'Interested', value: 100 },
-          { name: 'Meeting', value: 40 },
-          { name: 'Converted', value: 10 },
-        ],
+      return res.status(503).json({
+        error: 'Database not connected',
+        totalLeads: 0,
+        qualifiedLeads: 0,
+        hotLeads: 0,
+        conversionRate: '0',
+        pipeline: [],
       });
     }
 
