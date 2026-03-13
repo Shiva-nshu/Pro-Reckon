@@ -96,7 +96,16 @@ export async function enrichLead(websiteUrl: string): Promise<EnrichedData | nul
   }
 }
 
-/** Lead + enrichment from Hunter.io (for scraper). No mock - returns null if API key missing or request fails. */
+/** One contact person at a company (from Domain Search) — the person to pitch to. */
+export interface ContactPerson {
+  firstName: string;
+  lastName: string;
+  position: string;
+  email: string;
+  seniority?: string;
+}
+
+/** Lead + enrichment from Hunter.io (for scraper). Includes who to contact (people to pitch to). */
 export interface CompanyLeadInput {
   companyName: string;
   website: string;
@@ -104,7 +113,79 @@ export interface CompanyLeadInput {
   location?: string;
   email?: string;
   founderName?: string;
+  contactRole?: string;
   enrichmentData: EnrichedData | null;
+  /** All discovered contacts at this company (decision makers to reach). */
+  contacts?: ContactPerson[];
+}
+
+/**
+ * Fetch people (contacts) at a company via Hunter Domain Search — the set of people to pitch to.
+ * Prefers executive/senior and personal emails. Uses 1 credit per 1–10 emails returned.
+ */
+export async function getContactsByDomain(domain: string, apiKey: string): Promise<ContactPerson[]> {
+  try {
+    const { data } = await axios.get<{
+      data?: { emails?: Array<{ value: string; first_name?: string; last_name?: string; position?: string; seniority?: string; type?: string }> };
+      errors?: unknown;
+    }>('https://api.hunter.io/v2/domain-search', {
+      params: { domain, api_key: apiKey, limit: 10, type: 'personal' },
+      timeout: 15000,
+    });
+    if (data.errors || !data.data?.emails?.length) return [];
+    const contacts: ContactPerson[] = data.data.emails
+      .filter((e) => e.value)
+      .map((e) => ({
+        firstName: e.first_name ?? '',
+        lastName: e.last_name ?? '',
+        position: e.position ?? 'Contact',
+        email: e.value,
+        seniority: e.seniority,
+      }));
+    return contacts;
+  } catch (err) {
+    console.warn(`Domain Search failed for ${domain}:`, axios.isAxiosError(err) ? err.message : err);
+    return [];
+  }
+}
+
+/**
+ * Discover companies matching ICP (industry + location) via Hunter Discover API.
+ * Returns list of { domain, organization } to then enrich and get contacts.
+ */
+export async function discoverCompaniesByICP(options: {
+  apiKey: string;
+  country?: string;
+  industries?: string[];
+  headcount?: string[];
+  limit?: number;
+}): Promise<{ domain: string; organization: string }[]> {
+  const { apiKey, country = 'IN', industries = [], headcount = ['1-10', '11-50', '51-200'], limit = 50 } = options;
+  try {
+    const body: Record<string, unknown> = {
+      limit: Math.min(limit, 100),
+      headcount,
+    };
+    if (country) {
+      body.headquarters_location = { include: [{ country }] };
+    }
+    if (industries.length) {
+      body.industry = { include: industries };
+    }
+    const { data } = await axios.post<{
+      data?: Array<{ domain: string; organization: string }>;
+      errors?: unknown;
+    }>('https://api.hunter.io/v2/discover', body, {
+      params: { api_key: apiKey },
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 20000,
+    });
+    if (data.errors || !Array.isArray(data.data)) return [];
+    return data.data.map((d) => ({ domain: d.domain, organization: d.organization || d.domain }));
+  } catch (err) {
+    console.error('Discover API failed:', axios.isAxiosError(err) ? err.response?.data ?? err.message : err);
+    return [];
+  }
 }
 
 export async function getCompanyLeadByDomain(domain: string): Promise<CompanyLeadInput | null> {
@@ -168,14 +249,23 @@ export async function getCompanyLeadByDomain(domain: string): Promise<CompanyLea
           : undefined,
     };
 
+    // Get people to pitch to (Domain Search — uses credits)
+    const contacts = await getContactsByDomain(normalizedDomain, apiKey);
+    const bestContact = contacts.find((c) => c.seniority === 'executive') || contacts.find((c) => (c.firstName || c.lastName)) || contacts[0];
+    const founderName = bestContact ? [bestContact.firstName, bestContact.lastName].filter(Boolean).join(' ') || undefined : undefined;
+    const contactRole = bestContact?.position;
+    const contactEmail = bestContact?.email ?? emails[0];
+
     return {
       companyName: d.name ?? normalizedDomain,
       website,
       industry: d.category?.industry ?? d.category?.sector,
       location: d.location,
-      email: emails[0],
-      founderName: undefined,
+      email: contactEmail,
+      founderName,
+      contactRole,
       enrichmentData,
+      contacts: contacts.length ? contacts : undefined,
     };
   } catch (error) {
     console.error(`❌ getCompanyLeadByDomain failed for ${normalizedDomain}:`, axios.isAxiosError(error) ? error.response?.data ?? error.message : error);

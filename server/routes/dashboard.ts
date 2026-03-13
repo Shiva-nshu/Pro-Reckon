@@ -18,17 +18,23 @@ router.get('/stats', async (req, res) => {
     }
 
     const totalLeads = await leadFirestore.countLeads();
-    const qualifiedLeads = await leadFirestore.countLeads({ isQualified: true });
-    const hotLeads = await leadFirestore.countLeads({ priorityLevel: 'Hot' });
     const converted = await leadFirestore.countLeads({ status: 'Converted' });
     const pipeline = await leadFirestore.pipelineByStatus();
+    const tierBreakdown = await leadFirestore.pipelineByTier();
+    const scoreTierBreakdown = await leadFirestore.pipelineByScoreTier();
+    // Derive hot/qualified from score tier so counts match chart (dynamic for legacy leads)
+    const hotLeads = scoreTierBreakdown.find((t) => t.name === 'Hot')?.value ?? 0;
+    const qualifiedLeads = (scoreTierBreakdown.find((t) => t.name === 'Hot')?.value ?? 0) + (scoreTierBreakdown.find((t) => t.name === 'Qualified')?.value ?? 0);
 
     res.json({
       totalLeads,
       qualifiedLeads,
+      qualifiedForOutreach: qualifiedLeads,
       hotLeads,
       conversionRate: totalLeads > 0 ? ((converted / totalLeads) * 100).toFixed(1) : 0,
       pipeline,
+      tierBreakdown,
+      scoreTierBreakdown,
     });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch dashboard stats' });

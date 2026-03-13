@@ -15,7 +15,7 @@ export default function Dashboard() {
       const res = await fetch('/api/dashboard/stats');
       const data = await res.json();
       if (!res.ok) {
-        setStats({ totalLeads: 0, qualifiedLeads: 0, hotLeads: 0, conversionRate: '0', pipeline: [] });
+        setStats({ totalLeads: 0, qualifiedLeads: 0, hotLeads: 0, conversionRate: '0', pipeline: [], tierBreakdown: [], scoreTierBreakdown: [] });
       } else {
         setStats(data);
       }
@@ -24,7 +24,7 @@ export default function Dashboard() {
       setDbStatus(healthData.dbStatus);
     } catch (err) {
       console.error(err);
-      setStats({ totalLeads: 0, qualifiedLeads: 0, hotLeads: 0, conversionRate: '0', pipeline: [] });
+      setStats({ totalLeads: 0, qualifiedLeads: 0, hotLeads: 0, conversionRate: '0', pipeline: [], tierBreakdown: [], scoreTierBreakdown: [] });
     } finally {
       setLoading(false);
     }
@@ -66,18 +66,19 @@ export default function Dashboard() {
         </button>
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI Cards — Intent → Qualification → Outreach flow */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <KPICard title="Total Leads" value={stats?.totalLeads} icon={<Users className="text-blue-500" />} />
-        <KPICard title="Qualified" value={stats?.qualifiedLeads} icon={<CheckCircle className="text-green-500" />} />
-        <KPICard title="Hot (Conversion-ready)" value={stats?.hotLeads} icon={<Target className="text-purple-500" />} />
+        <KPICard title="Qualified for outreach (60+)" value={stats?.qualifiedLeads ?? stats?.qualifiedForOutreach} icon={<CheckCircle className="text-green-500" />} />
+        <KPICard title="Hot (conversion-ready)" value={stats?.hotLeads} icon={<Target className="text-purple-500" />} />
         <KPICard title="Conversion Rate" value={`${stats?.conversionRate}%`} icon={<TrendingUp className="text-orange-500" />} />
       </div>
+      <p className="text-xs text-slate-500">Only leads with qualification score ≥ 60 are ready for personalized outreach.</p>
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-          <h3 className="text-lg font-semibold mb-4">Pipeline Status</h3>
+          <h3 className="text-lg font-semibold mb-4">Pipeline by Status</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stats?.pipeline}>
@@ -92,7 +93,21 @@ export default function Dashboard() {
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-          <h3 className="text-lg font-semibold mb-4">Lead Distribution</h3>
+          <h3 className="text-lg font-semibold mb-4">Score tier (Hot / Qualified / Low)</h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stats?.scoreTierBreakdown || stats?.tierBreakdown || []}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="value" fill="#059669" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+          <h3 className="text-lg font-semibold mb-4">Lead Distribution by Status</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
