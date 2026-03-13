@@ -1,11 +1,11 @@
+import 'dotenv/config';
 import express from 'express';
-import mongoose from 'mongoose';
 import cors from 'cors';
 import cron from 'node-cron';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import fs from 'fs';
+import { initFirebase, isFirebaseConnected } from './server/config/firebase.js';
 
 // Import Routes
 import leadRoutes from './server/routes/leads.js';
@@ -14,7 +14,6 @@ import dashboardRoutes from './server/routes/dashboard.js';
 
 // Import Services (for scheduler)
 import { runDailyScrape } from './server/services/scraperService.js';
-import { processEmailQueue } from './server/services/emailService.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -25,15 +24,8 @@ async function startServer() {
   app.use(cors());
   app.use(express.json());
 
-  // Connect to MongoDB
-  const MONGODB_URI = process.env.MONGODB_URI;
-  if (MONGODB_URI) {
-    mongoose.connect(MONGODB_URI)
-      .then(() => console.log('✅ Connected to MongoDB'))
-      .catch(err => console.error('❌ MongoDB Connection Error:', err));
-  } else {
-    console.warn('⚠️ MONGODB_URI not found in environment variables. Database features will not work until configured.');
-  }
+  // Initialize Firebase Firestore (reads from env)
+  initFirebase();
 
   // API Routes
   app.use('/api/leads', leadRoutes);
@@ -42,10 +34,10 @@ async function startServer() {
 
   // Health Check
   app.get('/api/health', (req, res) => {
-    res.json({ 
-      status: 'ok', 
+    res.json({
+      status: 'ok',
       timestamp: new Date(),
-      dbStatus: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+      dbStatus: isFirebaseConnected() ? 'connected' : 'disconnected',
     });
   });
 
@@ -54,12 +46,6 @@ async function startServer() {
   cron.schedule('0 0 * * *', () => {
     console.log('⏰ Running daily scrape job...');
     runDailyScrape();
-  });
-
-  // Process email queue every hour
-  cron.schedule('0 * * * *', () => {
-    console.log('⏰ Processing email queue...');
-    processEmailQueue();
   });
 
   // Vite middleware for development

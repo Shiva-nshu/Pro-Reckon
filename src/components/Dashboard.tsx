@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Users, Mail, CheckCircle, TrendingUp, RefreshCw } from 'lucide-react';
+import { Users, Target, CheckCircle, TrendingUp, RefreshCw } from 'lucide-react';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
@@ -45,10 +45,11 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">Executive Dashboard</h1>
+          <h1 className="text-3xl font-bold text-slate-800">Lead Discovery & Conversion</h1>
+          <p className="text-sm text-slate-500 mt-1">Find the right clients for ProReckon Solutions</p>
           {dbStatus === 'disconnected' && (
             <p className="text-sm text-amber-600 mt-1 flex items-center gap-1">
-              ⚠️ Running in Demo Mode (Database not connected). Configure MONGODB_URI in .env to persist data.
+              ⚠️ Demo mode — connect Firebase in .env to persist leads.
             </p>
           )}
         </div>
@@ -65,7 +66,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <KPICard title="Total Leads" value={stats?.totalLeads} icon={<Users className="text-blue-500" />} />
         <KPICard title="Qualified" value={stats?.qualifiedLeads} icon={<CheckCircle className="text-green-500" />} />
-        <KPICard title="Emails Sent" value={stats?.emailsSent} icon={<Mail className="text-purple-500" />} />
+        <KPICard title="Hot (Conversion-ready)" value={stats?.hotLeads} icon={<Target className="text-purple-500" />} />
         <KPICard title="Conversion Rate" value={`${stats?.conversionRate}%`} icon={<TrendingUp className="text-orange-500" />} />
       </div>
 

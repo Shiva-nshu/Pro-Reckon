@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Send, Settings, PieChart, ExternalLink } from 'lucide-react';
+import { LayoutDashboard, Users, Target, Settings, PieChart, ExternalLink } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import LeadsList from './components/LeadsList';
 import ConsultationPage from './components/ConsultationPage';
@@ -11,7 +11,7 @@ function Sidebar() {
   const navItems = [
     { path: '/', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
     { path: '/leads', icon: <Users size={20} />, label: 'Leads' },
-    { path: '/campaigns', icon: <Send size={20} />, label: 'Campaigns' },
+    { path: '/pipeline', icon: <Target size={20} />, label: 'Pipeline' },
     { path: '/analytics', icon: <PieChart size={20} />, label: 'Analytics' },
     { path: '/settings', icon: <Settings size={20} />, label: 'Settings' },
     { path: '/consultation', icon: <ExternalLink size={20} />, label: 'Public Page' },
@@ -23,7 +23,7 @@ function Sidebar() {
         <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
           ProReckon AI
         </h1>
-        <p className="text-xs text-slate-400 mt-1">Client Acquisition System</p>
+        <p className="text-xs text-slate-400 mt-1">Find & Convert the Right Clients</p>
       </div>
       
       <nav className="flex-1 p-4 space-y-1">
@@ -73,7 +73,7 @@ export default function App() {
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/leads" element={<LeadsList />} />
-                <Route path="/campaigns" element={<div className="p-8">Campaigns Module Coming Soon</div>} />
+                <Route path="/pipeline" element={<div className="p-8">Pipeline view — focus on conversion-ready leads. Coming soon.</div>} />
                 <Route path="/analytics" element={<div className="p-8">Analytics Module Coming Soon</div>} />
                 <Route path="/settings" element={<div className="p-8">Settings Module Coming Soon</div>} />
               </Routes>

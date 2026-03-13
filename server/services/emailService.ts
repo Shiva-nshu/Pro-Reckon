@@ -1,7 +1,8 @@
 import nodemailer from 'nodemailer';
 import { GoogleGenAI } from '@google/genai';
-import { Lead } from '../models/Lead.js';
-import mongoose from 'mongoose';
+import { isFirebaseConnected } from '../config/firebase.js';
+import { findLeadsToEmail, updateLead } from '../models/leadFirestore.js';
+import type { LeadRecord } from '../models/leadFirestore.js';
 
 // Initialize Gemini
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -17,7 +18,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-export async function generatePersonalizedEmail(lead: any) {
+export async function generatePersonalizedEmail(lead: LeadRecord) {
   try {
     const prompt = `
       Write a professional, high-intent cold email to ${lead.founderName || 'the Founder'} of ${lead.companyName}.
@@ -42,42 +43,44 @@ export async function generatePersonalizedEmail(lead: any) {
 }
 
 export async function processEmailQueue() {
-  if (mongoose.connection.readyState !== 1) return;
+  if (!isFirebaseConnected()) return;
 
-  // Find leads that are qualified, status is 'New', and haven't been emailed
-  const leadsToEmail = await Lead.find({
-    isQualified: true,
-    status: 'New',
-    email: { $exists: true, $ne: '' }
-  }).limit(5);
+  const leadsToEmail = await findLeadsToEmail(5);
 
   for (const lead of leadsToEmail) {
+    if (!lead.email) continue;
     try {
       const emailContent = await generatePersonalizedEmail(lead);
-      
-      // Send Email (Mocked if no creds)
+
       if (process.env.SMTP_USER && process.env.SMTP_USER !== 'your-email@gmail.com') {
         await transporter.sendMail({
           from: '"ProReckon Solutions" <outreach@proreckon.com>',
           to: lead.email,
           subject: `Funding opportunities for ${lead.companyName}`,
-          text: emailContent
+          text: emailContent,
         });
         console.log(`📧 Sent email to ${lead.email}`);
       } else {
         console.log(`📧 [MOCK SEND] To: ${lead.email} | Content: ${emailContent.substring(0, 50)}...`);
       }
 
-      // Update Lead Status
-      lead.status = 'Contacted';
-      lead.emailSequence.history.push({
-        type: 'sent',
-        subject: `Funding opportunities for ${lead.companyName}`,
-        content: emailContent
+      const history = lead.emailSequence?.history ?? [];
+      await updateLead(lead.id, {
+        status: 'Contacted',
+        emailSequence: {
+          ...lead.emailSequence,
+          lastEmailSentAt: new Date(),
+          history: [
+            ...history,
+            {
+              type: 'sent' as const,
+              date: new Date(),
+              subject: `Funding opportunities for ${lead.companyName}`,
+              content: emailContent,
+            },
+          ],
+        },
       });
-      lead.emailSequence.lastEmailSentAt = new Date();
-      await lead.save();
-
     } catch (error) {
       console.error(`❌ Failed to email ${lead.email}:`, error);
     }

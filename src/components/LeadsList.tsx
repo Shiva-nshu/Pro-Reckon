@@ -20,7 +20,10 @@ export default function LeadsList() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-slate-800">Lead Database</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">Discovered Leads</h1>
+          <p className="text-sm text-slate-500 mt-0.5">Right-fit clients for ProReckon Solutions</p>
+        </div>
         <div className="flex gap-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />

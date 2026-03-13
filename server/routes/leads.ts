@@ -1,40 +1,41 @@
 import express from 'express';
-import { Lead } from '../models/Lead.js';
+import { getFirestore, isFirebaseConnected } from '../config/firebase.js';
+import * as leadFirestore from '../models/leadFirestore.js';
 import { runDailyScrape } from '../services/scraperService.js';
 
 const router = express.Router();
+
+function withId(lead: leadFirestore.LeadRecord) {
+  return { ...lead, _id: lead.id };
+}
 
 // GET all leads with pagination & filtering
 router.get('/', async (req, res) => {
   try {
     const { page = 1, limit = 20, status, priority } = req.query;
-    const query: any = {};
-    if (status) query.status = status;
-    if (priority) query.priorityLevel = priority;
 
-    // Mock data if DB not connected
-    if (mongoose.connection.readyState !== 1) {
-       return res.json({
-         leads: [
-           { _id: '1', companyName: 'TechCorp', founderName: 'John Doe', score: 45, status: 'New', priorityLevel: 'Hot', email: 'john@techcorp.com' },
-           { _id: '2', companyName: 'BuildIt Inc', founderName: 'Jane Smith', score: 20, status: 'Contacted', priorityLevel: 'Warm', email: 'jane@buildit.com' }
-         ],
-         total: 2,
-         pages: 1
-       });
+    if (!getFirestore() || !isFirebaseConnected()) {
+      return res.json({
+        leads: [
+          { _id: '1', companyName: 'TechCorp', founderName: 'John Doe', score: 45, status: 'New', priorityLevel: 'Hot', email: 'john@techcorp.com' },
+          { _id: '2', companyName: 'BuildIt Inc', founderName: 'Jane Smith', score: 20, status: 'Contacted', priorityLevel: 'Warm', email: 'jane@buildit.com' },
+        ],
+        total: 2,
+        pages: 1,
+      });
     }
 
-    const leads = await Lead.find(query)
-      .sort({ createdAt: -1 })
-      .limit(Number(limit))
-      .skip((Number(page) - 1) * Number(limit));
-
-    const total = await Lead.countDocuments(query);
+    const result = await leadFirestore.findLeads({
+      page: Number(page),
+      limit: Number(limit),
+      status: status as string | undefined,
+      priorityLevel: priority as string | undefined,
+    });
 
     res.json({
-      leads,
-      total,
-      pages: Math.ceil(total / Number(limit))
+      leads: result.leads.map(withId),
+      total: result.total,
+      pages: result.pages,
     });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch leads' });
@@ -44,10 +45,11 @@ router.get('/', async (req, res) => {
 // POST create manual lead
 router.post('/', async (req, res) => {
   try {
-    if (mongoose.connection.readyState !== 1) return res.status(503).json({error: 'Database not connected'});
-    const lead = new Lead(req.body);
-    await lead.save();
-    res.status(201).json(lead);
+    if (!getFirestore() || !isFirebaseConnected()) {
+      return res.status(503).json({ error: 'Database not connected' });
+    }
+    const lead = await leadFirestore.createLead(req.body);
+    res.status(201).json(withId(lead));
   } catch (error) {
     res.status(400).json({ error: 'Failed to create lead' });
   }
@@ -56,7 +58,6 @@ router.post('/', async (req, res) => {
 // POST trigger scraper manually
 router.post('/scrape', async (req, res) => {
   try {
-    // Run in background
     runDailyScrape().catch(console.error);
     res.json({ message: 'Scraping started in background' });
   } catch (error) {
@@ -64,5 +65,4 @@ router.post('/scrape', async (req, res) => {
   }
 });
 
-import mongoose from 'mongoose';
 export default router;
