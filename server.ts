@@ -1,19 +1,14 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import cron from 'node-cron';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { initFirebase, isFirebaseConnected } from './server/config/firebase.js';
-
-// Import Routes
-import leadRoutes from './server/routes/leads.js';
+import leadRoutes from './lead-system/routes/leadRoutes.js';
 import campaignRoutes from './server/routes/campaigns.js';
 import dashboardRoutes from './server/routes/dashboard.js';
-
-// Import Services (for scheduler)
-import { runDailyScrape } from './server/services/scraperService.js';
+import { startScraperScheduler } from './lead-system/scheduler/scraperScheduler.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -24,15 +19,12 @@ async function startServer() {
   app.use(cors());
   app.use(express.json());
 
-  // Initialize Firebase Firestore (reads from env)
   initFirebase();
 
-  // API Routes
   app.use('/api/leads', leadRoutes);
   app.use('/api/campaigns', campaignRoutes);
   app.use('/api/dashboard', dashboardRoutes);
 
-  // Health Check
   app.get('/api/health', (req, res) => {
     res.json({
       status: 'ok',
@@ -41,11 +33,12 @@ async function startServer() {
     });
   });
 
-  // Scheduler (Cron Jobs)
-  // Run scraping every day at midnight
-  cron.schedule('0 0 * * *', () => {
-    console.log('⏰ Running daily scrape job...');
-    runDailyScrape();
+  startScraperScheduler();
+
+  // Static lead dashboard (simple HTML)
+  app.use('/dashboard', express.static(path.join(__dirname, 'lead-system', 'dashboard')));
+  app.get('/dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, 'lead-system', 'dashboard', 'index.html'));
   });
 
   // Vite middleware for development

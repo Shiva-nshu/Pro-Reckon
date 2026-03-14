@@ -1,13 +1,11 @@
-import express from 'express';
-import { isFirebaseConnected } from '../config/firebase.js';
-import { Lead } from '../../lead-system/models/Lead.js';
+import type { Request, Response } from 'express';
+import { Lead } from '../models/Lead.js';
+import { isDBConnected } from '../config/db.js';
 
-const router = express.Router();
-
-router.get('/stats', async (req, res) => {
+export async function getDashboardStats(req: Request, res: Response): Promise<void> {
   try {
-    if (!isFirebaseConnected()) {
-      return res.status(503).json({
+    if (!isDBConnected()) {
+      res.status(503).json({
         error: 'Database not connected',
         totalLeads: 0,
         qualifiedLeads: 0,
@@ -18,8 +16,8 @@ router.get('/stats', async (req, res) => {
         tierBreakdown: [],
         scoreTierBreakdown: [],
       });
+      return;
     }
-
     const totalLeads = await Lead.countDocuments();
     const hotLeads = await Lead.countDocuments({ tier: 'Hot Lead' });
     const qualifiedForOutreach = await Lead.countDocuments({ qualifiedForOutreach: true });
@@ -42,9 +40,17 @@ router.get('/stats', async (req, res) => {
       tierBreakdown: scoreTierBreakdown,
       scoreTierBreakdown,
     });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch dashboard stats' });
+  } catch (err) {
+    res.status(500).json({
+      error: 'Failed to fetch dashboard stats',
+      totalLeads: 0,
+      qualifiedLeads: 0,
+      hotLeads: 0,
+      qualifiedForOutreach: 0,
+      conversionRate: '0',
+      pipeline: [],
+      tierBreakdown: [],
+      scoreTierBreakdown: [],
+    });
   }
-});
-
-export default router;
+}

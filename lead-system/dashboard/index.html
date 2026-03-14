@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ProReckon Lead Dashboard</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 16px; background: #f8fafc; }
+    h1 { margin: 0 0 8px 0; font-size: 1.5rem; }
+    .sub { color: #64748b; font-size: 0.875rem; margin-bottom: 16px; }
+    .toolbar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+    .toolbar label { display: flex; align-items: center; gap: 6px; }
+    select, button { padding: 8px 12px; border-radius: 8px; border: 1px solid #e2e8f0; }
+    button { background: #4f46e5; color: white; border: none; cursor: pointer; font-weight: 500; }
+    button:hover { background: #4338ca; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #f1f5f9; font-size: 0.875rem; }
+    td a { color: #4f46e5; text-decoration: none; }
+    td a:hover { text-decoration: underline; }
+    th { background: #f8fafc; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: #64748b; }
+    tr:hover { background: #f8fafc; }
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+    .badge-hot { background: #dcfce7; color: #166534; }
+    .badge-qualified { background: #fef9c3; color: #854d0e; }
+    .badge-low { background: #fee2e2; color: #991b1b; }
+    .loading { text-align: center; padding: 40px; color: #64748b; }
+    .error { color: #dc2626; padding: 8px 0; }
+    a { color: #4f46e5; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <h1>ProReckon Lead Dashboard</h1>
+  <p class="sub">Qualified leads for funding client acquisition (demo)</p>
+  <div class="toolbar">
+    <label>
+      <input type="radio" name="filter" value="" checked /> All
+    </label>
+    <label>
+      <input type="radio" name="filter" value="60" /> Score ≥ 60 (Qualified)
+    </label>
+    <label>
+      <input type="radio" name="filter" value="70" /> Score ≥ 70 (Hot)
+    </label>
+    <label>
+      Source:
+      <select id="sourceFilter">
+        <option value="">All sources</option>
+        <option value="Hunter.io">Hunter.io</option>
+        <option value="indiamart">IndiaMart</option>
+        <option value="tradeindia">TradeIndia</option>
+        <option value="justdial">JustDial</option>
+        <option value="googlemaps">Google Maps</option>
+        <option value="mca">MCA</option>
+        <option value="startups">Startups</option>
+      </select>
+    </label>
+    <button id="refresh">Refresh</button>
+    <button id="runScrape">Run Scraping</button>
+  </div>
+  <div id="error" class="error"></div>
+  <div id="content">
+    <div class="loading">Loading leads…</div>
+  </div>
+  <script src="dashboard.js"></script>
+</body>
+</html>

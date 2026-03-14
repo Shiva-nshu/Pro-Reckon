@@ -112,6 +112,7 @@ export interface CompanyLeadInput {
   industry?: string;
   location?: string;
   email?: string;
+  phone?: string;
   founderName?: string;
   contactRole?: string;
   enrichmentData: EnrichedData | null;
@@ -256,12 +257,14 @@ export async function getCompanyLeadByDomain(domain: string): Promise<CompanyLea
     const contactRole = bestContact?.position;
     const contactEmail = bestContact?.email ?? emails[0];
 
+    const phone = d.site?.phoneNumbers?.[0] ?? undefined;
     return {
       companyName: d.name ?? normalizedDomain,
       website,
       industry: d.category?.industry ?? d.category?.sector,
       location: d.location,
       email: contactEmail,
+      phone,
       founderName,
       contactRole,
       enrichmentData,
